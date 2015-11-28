@@ -9,13 +9,12 @@
 #include <memory>
 #include <iostream>
 #include <exception>
-#include "Logger.hpp"
 
-namespace Car
+namespace HAN
 {
 
-    AStar::AStar(const Car::Warehouse& aWarehouse) :
-        warehouse(aWarehouse)
+    AStar::AStar(const HAN::Grid& aGrid) :
+        Grid(aGrid)
     {
 
     }
@@ -25,139 +24,155 @@ namespace Car
 
     }
 
-    Path AStar::Calculate(const Car::Point& start, const Car::Point& goal, bool fewestIntersections /*  = false */)
+    NodePtrs AStar::Calculate(NodePtr start, NodePtr goal)
     {
-        std::stringstream stream;
-        stream << start.asString() << " " << goal.asString() << std::endl;
-        Logger::log(stream.str());
-        if (!warehouse.isValidPoint(start) || !warehouse.isValidPoint(goal))
+        
+        if (!Grid.isValidNode(start) || !Grid.isValidNode(goal))
         {
-            // EXECPTION. Points do not exist within this warehouse.
-            throw std::invalid_argument("Starting point or goal are not valid within the warehouse");
+            // EXECPTION. Nodes do not exist within this Grid.
+            throw std::invalid_argument("Starting Node or goal are not valid within the Grid");
         }
-
-        Connection_ptr goalConnection = warehouse.findConnectionFor(goal);
-        if (goalConnection == NULL)
-        {
-            // should never happen.
-            throw std::invalid_argument("Goal is not valid within the warehouse");
-        }
-
-        std::vector<Path> allPaths;
         std::cout << "Starting path calculations " << std::endl;
 
-        // We construct the initial paths.
-        for (const Point& neighbour : findNeighbours(start))
-        {
-            Path aPath;
-            aPath.push_back(start);
-            aPath.push_back(neighbour);
-            allPaths.push_back(aPath);
+        // clear our lists
+        openList.clear();
+        closedList.clear();
+        
+        // reset all our nodes values
+
+
+        CalculateStep(start, goal);
+
+        // trace back parents from goal to nullptr. Must have reached goal at the last element
+        NodePtrs shortestPath = NodePtrs();
+
+        NodePtr currStep = goal;
+        while (currStep != nullptr) {
+            std::cout << "NODE STEP: " << currStep->asString() << std::endl;
+            shortestPath.push_back(currStep);
+            currStep = currStep->parentNode;
         }
 
-        if (allPaths.empty())
-        {
-            Path aPath;
-            aPath.push_back(start);
-            return aPath;
-        }
+        // TODO reverse the list and we have our path
 
-        // Now we will keep constructing new paths for each neighbour of the end point of the inital paths.
-        // After that, repeat but for the new collection of paths.
-        unsigned int pathsAtDestination = 0;
-        while (pathsAtDestination != allPaths.size())
-        {
-            // We clear all paths, to get rid of any non valid ones.
-            // We have stored the existing paths to a temp variable, which we will parse for new valid paths.
-            std::vector<Path> tempPaths = allPaths;
-            allPaths.clear();
-
-            pathsAtDestination = 0;
-            for (Path path : tempPaths)
-            {
-                Point lastPoint = path.getLast();
-
-                // Check if this path has reached it's goal.
-                // Once it has, we will return this path as it is the shortest route (least intersections)
-                // Reached goal if:
-                // 1) last point is same as goal
-                // 2) last point is same as goalConnection.one and not goalConnection.two
-                // 3) last point is same as goalConnection.two and not goalConnection.one
-                if (lastPoint == goal || (lastPoint == goalConnection->one && (goal != goalConnection->two))
-                        || (lastPoint == goalConnection->two && (goal != goalConnection->one)))
-                {
-                    // this path is at its destination.
-                    if (fewestIntersections)
-                    {
-                         return path;
-                    }
-                    allPaths.push_back(path);
-                    ++pathsAtDestination;
-                    continue;
-                }
-
-                // Construct new paths for each neighbour of the lastpoint in this path
-                std::vector<Point> neighbours = findNeighbours(lastPoint);
-                if (neighbours.size() > 0)
-                {
-                    for (const Point& neighbour : neighbours)
-                    {
-                        // Only add the path if it has valid neighbours
-                        // Invalid neighbours are:
-                        // - Dead ends
-                        // - Cycle paths
-                        if (!path.pointInPath(neighbour))
-                        {
-                            // Copy the path and add the neighbour to it.
-                            Path newPath(path);
-                            newPath.push_back(neighbour);
-                            allPaths.push_back(newPath);
-                        }
-                    }
-                }
-            }
-
-            if (allPaths.empty())
-            {
-                break;
-            }
-        }
-
-        // should never get here, but just in case it does, we will find the shortest path and return that.
-
-        if (allPaths.size() == 0)
-        {
-            std::cout << "All paths are empty" << std::endl;
-            // either an invalid point has been given or this point does not have any connections. Return an empty path.
-            Path dummyPath;
-            return dummyPath;
-        }
-
-        Path shortestPath = *allPaths.begin();
-
-        for (Path path : allPaths)
-        {
-            if (path.getLast() == goal || (path.getLast() == goalConnection->one && (goal != goalConnection->two))
-                || (path.getLast() == goalConnection->two && (goal != goalConnection->one)))
-
-            {
-            if (path.getLength() < shortestPath.getLength())
-            {
-                shortestPath = path;
-            }
-            }
-            else
-            {
-            std::cout << "INVALID PATH - DOES NOT REACH THE GOAL" << std::endl;
-            }
-        }
-        std::cout << "Returning the shortest path" << std::endl;
         return shortestPath;
     }
 
-    std::vector<Point> AStar::findNeighbours(const Car::Point& aPoint)
-    {
-        return warehouse.findNeighbours(aPoint);
+    void AStar::CalculateStep(NodePtr aNode, NodePtr goal) {
+        auto neighbours = findNeighbours(aNode);
+
+        for (auto node : neighbours) {            
+            if (*node == *goal) {
+                goal->parentNode = aNode;
+
+                return; // First to reach our goal is here
+            }
+
+            // If in closed list, skip this. We already evaluated the node
+            if (!InClosedList(node)) {
+     
+                if (node->parentNode == nullptr) { // Means this is the first time we are evaluating this node
+                    AddtoOpenList(node); // this is an open node
+
+                    // TODO if we can access this node
+                    node->heuristicValue = GetHeuristic(node, goal); // Movement from our neighbour to our goal
+                    node->cost = GetMovementCost(aNode, node); // Movement cost from our current node to our neighbouring node
+                    node->parentNode = aNode;
+                }
+                else {
+                    // Calculate if we want to leave this node alone.
+                    // This is the case if our own movement costs + movement costs towards neighbour node
+                    // are lower as the movement costs of the neighbour node already calculated.
+                    //
+                    // If that is the case, we want to re-parent the node to our node
+                    // and reset the movement costs on it
+                    auto newCosts = GetMovementCost(node, goal);
+                    if (newCosts >= node->cost) {
+                        continue; // It isn't shorter or cheaper from this node
+                    }
+                    node->cost = newCosts;
+                    node->parentNode = aNode;
+                }
+
+                node->fValue = node->heuristicValue + node->cost;
+            }
+        }
+        if (openList.size() == 0) {
+            return; // impossible to solve
+           // throw new std::exception("Empty open list");
+        }
+
+        NodePtr smallestNode = *openList.begin();
+        for (auto openNode : openList) {
+            if (openNode->fValue < smallestNode->fValue) {
+                smallestNode = openNode;
+            }
+        }
+        if (smallestNode == nullptr) {
+            throw new std::exception("Couldn't find anything in the open list! Have we evaluated all our options?");
+        }
+
+        // add our current node to our closed list -> we already evaluated this
+        AddtoClosedList(aNode);
+        RemoveFromOpenList(aNode); // Remove our node from the open list and add to closed list
+        CalculateStep(smallestNode, goal); // recursively calculate our path
     }
 
-} /* namespace Car */
+    NodePtrs AStar::findNeighbours(NodePtr aNode)
+    {
+        return Grid.findNeighbours(aNode);
+    }
+
+    unsigned short AStar::GetHeuristic(NodePtr from, NodePtr target) { 
+        return from->distanceTo(*target);
+    } // distance from to distance
+
+    unsigned short AStar::GetMovementCost(NodePtr from, NodePtr to) {
+        // Cost table:
+        // horizontal or vertical = 10
+        // Diagional = 14
+        // formula: costs to move to + from.cost;
+
+        if (from->x == to->x || from->y == to->y) {
+            return 10 + from->cost;
+        }
+        else { // assume diagional
+            return 14 + from->cost;
+        }
+    }
+
+    bool AStar::InOpenList(NodePtr aNode) {
+        for (auto node : openList) {
+            if (*node == *aNode)
+                return true;
+        }
+        return false;
+    }
+
+    bool AStar::InClosedList(NodePtr aNode) {
+        for (auto node : closedList) {
+            if (*node == *aNode)
+                return true;
+        }
+        return false;
+    }
+
+    void AStar::AddtoOpenList(NodePtr aNode) {
+        openList.push_back(aNode);
+    }
+    void AStar::AddtoClosedList(NodePtr aNode) {
+        closedList.push_back(aNode);
+    }
+
+    void AStar::RemoveFromOpenList(NodePtr aNode) {
+        if (openList.size() == 0)
+            return; // nothing to remove
+
+        for (auto it = openList.begin(); it != openList.end(); ++it) {
+            if (*it == aNode) {
+                openList.erase(it);
+                return;
+            }
+        }
+    }
+} /* namespace HAN */
