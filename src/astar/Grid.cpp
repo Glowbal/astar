@@ -36,7 +36,7 @@ namespace HAN
 
     void Grid::load(const std::string& fileName)
     {
-        /*nodes.clear();
+        nodes.clear();
 
         std::ifstream file(fileName);
         std::string line;
@@ -69,18 +69,6 @@ namespace HAN
             catch (...)
             {
                 std::cout << "Caught an unknown exception" << std::endl;
-            }
-        }*/
-
-        int x = 7;
-        int y = 15;
-        for (int i = 0; i < x; ++i) {
-            for (int j = 0; j < y; ++j) {
-                NodePtr node = std::shared_ptr<Node>(new Node(i, j));
-                if (j == 5 && i < 2)
-                    node->accessable = false;
-
-                nodes.push_back(node);
             }
         }
     }
@@ -136,19 +124,42 @@ namespace HAN
                 }
             }
             if (node->accessable) {
-                std::cout << "[" << nodeN << "|h" << node->heuristicValue << ",c" << node->cost;
+                std::cout << "[";
+                //std::cout << "[" << nodeN << "|h" << node->heuristicValue << ",c" << node->cost;
                 if (inPath) {
-                    std::cout << " X";
+                    std::cout << " X ";
+                }
+                else {
+                    if (node->fValue > 0) {
+                        if (node->fValue < 100) {
+                            std::cout << 0;
+                        }
+                        if (node->fValue < 10) {
+                            std::cout << 0;
+                        }
+                        std::cout << node->fValue;
+                    }
+                    else {
+                        std::cout << "   ";
+                    }
                 }
                 std::cout << "] ";
             }
             else {
-                std::cout << "||| ";
+                std::cout << "----- ";
             }
             nodeN++;
         }
     }
 
+    void Grid::resetGrid() {
+        for (auto node : nodes) {
+            node->cost = 0;
+            node->heuristicValue = 0;
+            node->fValue = 0;
+            node->parentNode = nullptr;
+        }
+    }
     void Grid::operator=(const Grid& rhs)
     {
         if (&rhs != this)

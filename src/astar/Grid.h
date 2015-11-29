@@ -33,6 +33,8 @@ namespace HAN
 
         void print(NodePtrs aPath);
 
+        void resetGrid();
+
         /**
          *
          */

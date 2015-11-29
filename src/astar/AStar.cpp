@@ -39,7 +39,7 @@ namespace HAN
         closedList.clear();
         
         // reset all our nodes values
-
+        Grid.resetGrid();
 
         CalculateStep(start, goal);
 
@@ -48,7 +48,6 @@ namespace HAN
 
         NodePtr currStep = goal;
         while (currStep != nullptr) {
-            std::cout << "NODE STEP: " << currStep->asString() << std::endl;
             shortestPath.push_back(currStep);
             currStep = currStep->parentNode;
         }
