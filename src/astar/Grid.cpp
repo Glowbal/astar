@@ -50,8 +50,8 @@ namespace HAN
                 std::stringstream stream;
                 stream << line;
 
-                unsigned short x;
-                unsigned short y;
+                float x;
+                float y;
 
                 stream >> x >> y;
 
@@ -130,7 +130,7 @@ namespace HAN
                     std::cout << " X ";
                 }
                 else {
-                    if (node->fValue > 0) {
+                    if (node->fValue > 0 && node->parentNode != nullptr) {
                         if (node->fValue < 100) {
                             std::cout << 0;
                         }
@@ -150,6 +150,8 @@ namespace HAN
             }
             nodeN++;
         }
+        std::cout << std::endl;
+        std::cout << "###############################################" << std::endl;
     }
 
     void Grid::resetGrid() {

@@ -31,10 +31,11 @@ namespace HAN
          * @return Shared NodePtrs to the shortest path
          */
         NodePtrs Calculate(NodePtr start, NodePtr goal);
+        void SetHeuristic(float multiply_);
 
     private:
 
-        void CalculateStep(NodePtr aNode, NodePtr goal);
+        void CalculateStep(NodePtr aNode, NodePtr goal, int stepC);
 
         /**
          * Find the neighbors of a Node
@@ -44,9 +45,9 @@ namespace HAN
          */
         NodePtrs findNeighbours(NodePtr aNode);
 
-        unsigned short GetHeuristic(NodePtr from, NodePtr target); // distance from to distance
+        float GetHeuristic(NodePtr from, NodePtr target); // distance from to distance
 
-        unsigned short GetMovementCost(NodePtr from, NodePtr to);
+        float GetMovementCost(NodePtr from, NodePtr to);
 
         bool InOpenList(NodePtr aNode);
         bool InClosedList(NodePtr aNode);
@@ -60,6 +61,7 @@ namespace HAN
 
         std::vector<NodePtr> openList;
         std::vector<NodePtr> closedList;
+        float multiplyH;
 
     };
 

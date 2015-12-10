@@ -14,9 +14,8 @@ namespace HAN
 {
 
     AStar::AStar(const HAN::Grid& aGrid) :
-        Grid(aGrid)
+        Grid(aGrid), multiplyH(1)
     {
-
     }
 
     AStar::~AStar()
@@ -41,7 +40,7 @@ namespace HAN
         // reset all our nodes values
         Grid.resetGrid();
 
-        CalculateStep(start, goal);
+        CalculateStep(start, goal, 0);
 
         // trace back parents from goal to nullptr. Must have reached goal at the last element
         NodePtrs shortestPath = NodePtrs();
@@ -56,8 +55,11 @@ namespace HAN
 
         return shortestPath;
     }
+    void AStar::SetHeuristic(float multiply_) {
+        multiplyH = multiply_;
+    }
 
-    void AStar::CalculateStep(NodePtr aNode, NodePtr goal) {
+    void AStar::CalculateStep(NodePtr aNode, NodePtr goal, int stepC = 0) {
         auto neighbours = findNeighbours(aNode);
 
         for (auto node : neighbours) {            
@@ -111,22 +113,25 @@ namespace HAN
             throw new std::exception("Couldn't find anything in the open list! Have we evaluated all our options?");
         }
 
+        if (stepC % 20 == 0) {
+        //    Grid.print(NodePtrs());
+        }
+
         // add our current node to our closed list -> we already evaluated this
         AddtoClosedList(aNode);
         RemoveFromOpenList(aNode); // Remove our node from the open list and add to closed list
-        CalculateStep(smallestNode, goal); // recursively calculate our path
+        CalculateStep(smallestNode, goal, ++stepC); // recursively calculate our path
     }
 
-    NodePtrs AStar::findNeighbours(NodePtr aNode)
-    {
+    NodePtrs AStar::findNeighbours(NodePtr aNode) {
         return Grid.findNeighbours(aNode);
     }
 
-    unsigned short AStar::GetHeuristic(NodePtr from, NodePtr target) { 
-        return from->distanceTo(*target);
+    float AStar::GetHeuristic(NodePtr from, NodePtr target) { 
+        return from->distanceTo(*target) * multiplyH;
     } // distance from to distance
 
-    unsigned short AStar::GetMovementCost(NodePtr from, NodePtr to) {
+    float AStar::GetMovementCost(NodePtr from, NodePtr to) {
         // Cost table:
         // horizontal or vertical = 10
         // Diagional = 14

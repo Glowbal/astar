@@ -13,7 +13,7 @@
 namespace HAN
 {
 
-    Node::Node(unsigned short anX, unsigned short anY) :
+    Node::Node(float anX, float anY) :
         x(anX), y(anY), cost(0), heuristicValue(0), fValue(0)
     {
         accessable = true;
@@ -48,10 +48,10 @@ namespace HAN
         return !operator==(aNode);
     }
 
-    unsigned short Node::distanceTo(const Node& aNode) const
+    float Node::distanceTo(const Node& aNode) const
     {
-        unsigned short horizontalDiff = std::abs(x - aNode.x);
-        unsigned short verticalDiff = std::abs(y - aNode.y);
+        float horizontalDiff = std::abs(x - aNode.x);
+        float verticalDiff = std::abs(y - aNode.y);
 
         return horizontalDiff + verticalDiff;
     }

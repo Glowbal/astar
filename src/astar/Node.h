@@ -17,7 +17,7 @@ namespace HAN
     class Node
     {
     public:
-        Node(unsigned short anX, unsigned short anY);
+        Node(float anX, float anY);
         virtual ~Node();
 
         Node(const Node& aNode);
@@ -30,7 +30,7 @@ namespace HAN
          * @param aNode
          * @return distance.
          */
-        unsigned short distanceTo(const Node& aNode) const;
+        float distanceTo(const Node& aNode) const;
 
         /*
          * Get this Node as a string
@@ -38,11 +38,11 @@ namespace HAN
         std::string asString() const;
 
         bool accessable;
-        unsigned short x;
-        unsigned short y;
-        unsigned short cost;
-        unsigned short heuristicValue;
-        unsigned short fValue;
+        float x;
+        float y;
+        float cost;
+        float heuristicValue;
+        float fValue;
         std::shared_ptr<HAN::Node> parentNode;
     };
     typedef std::shared_ptr<HAN::Node> NodePtr;
