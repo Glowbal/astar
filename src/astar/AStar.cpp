@@ -60,27 +60,18 @@ namespace HAN
     }
 
     void AStar::CalculateStep(NodePtr aNode, NodePtr goal, int stepC = 0) {
-        auto neighbours = findNeighbours(aNode);
-
-        for (auto node : neighbours) {            
+        for (auto node : findNeighbours(aNode)) {
             if (*node == *goal) {
                 goal->parentNode = aNode;
-
                 return; // First to reach our goal is here
-            }
-
-            // If in closed list, skip this. We already evaluated the node
-            if (!InClosedList(node)) {
-     
+            }                       
+            if (!InClosedList(node)) {  // If in closed list, skip this. We already evaluated the node     
                 if (node->parentNode == nullptr) { // Means this is the first time we are evaluating this node
                     AddtoOpenList(node); // this is an open node
-
-                    // TODO if we can access this node
                     node->heuristicValue = GetHeuristic(node, goal); // Movement from our neighbour to our goal
                     node->cost = GetMovementCost(aNode, node); // Movement cost from our current node to our neighbouring node
                     node->parentNode = aNode;
-                }
-                else {
+                } else {
                     // Calculate if we want to leave this node alone.
                     // This is the case if our own movement costs + movement costs towards neighbour node
                     // are lower as the movement costs of the neighbour node already calculated.
@@ -94,29 +85,20 @@ namespace HAN
                     node->cost = newCosts;
                     node->parentNode = aNode;
                 }
-
                 node->fValue = node->heuristicValue + node->cost;
             }
         }
-        if (openList.size() == 0) {
-            return; // impossible to solve
-           // throw new std::exception("Empty open list");
-        }
+        if (openList.size() == 0)
+            throw new std::exception("Empty open list");
 
         NodePtr smallestNode = *openList.begin();
-        for (auto openNode : openList) {
-            if (openNode->fValue < smallestNode->fValue) {
+        for (auto openNode : openList) 
+            if (openNode->fValue < smallestNode->fValue)
                 smallestNode = openNode;
-            }
-        }
-        if (smallestNode == nullptr) {
+        
+        if (smallestNode == nullptr) 
             throw new std::exception("Couldn't find anything in the open list! Have we evaluated all our options?");
-        }
-
-        if (stepC % 20 == 0) {
-        //    Grid.print(NodePtrs());
-        }
-
+        
         // add our current node to our closed list -> we already evaluated this
         AddtoClosedList(aNode);
         RemoveFromOpenList(aNode); // Remove our node from the open list and add to closed list
